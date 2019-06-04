@@ -1,0 +1,33 @@
+{
+  "name": "zovas",
+  "version": "0.0.1",
+  "description": "A canvas library for typescript",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ztytotoro/xanvas.git"
+  },
+  "keywords": [
+    "typescript",
+    "ts",
+    "canvas"
+  ],
+  "author": "Yarn",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ztytotoro/xanvas/issues"
+  },
+  "homepage": "https://github.com/ztytotoro/xanvas#readme",
+  "devDependencies": {
+    "rollup-plugin-node-resolve": "^5.0.1",
+    "rollup-plugin-typescript": "^1.0.1",
+    "tslib": "^1.9.3",
+    "typescript": "^3.5.1"
+  },
+  "dependencies": {
+    "rxjs": "^6.5.2"
+  }
+}
