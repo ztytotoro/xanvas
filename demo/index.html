@@ -20,9 +20,14 @@
             name: 'rect',
             fill: 'green',
             width: 100,
-            height: 100,
-            position: [0, 0]
+            height: 100
         }));
+        canvas.add(new zovas.CanvasRect({
+            name: 'rect',
+            fill: 'red',
+            width: 150,
+            height: 150
+        }), 20, 20);
         canvas.render();
     }
 </script>

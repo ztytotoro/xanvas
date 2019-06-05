@@ -96,7 +96,7 @@ export class Zovas {
         if (e.target === this.canvas /*&& this.isInCanvas(e.clientX, e.clientY)*/) {
             const [x, y] = this.getPos(e.clientX, e.clientY);
             if (e.type === 'mousedown') {
-                const target = this.items.filter(item => item.isHit(x, y) || item.isBorder(x, y))[0];
+                const target = this.items.filter(item => item.isHit(x, y) || item.isBorder(x, y)).reverse()[0];
                 if (target) {
                     if (target.isBorder(x, y)) {
                         this.resizeItem = target;
@@ -173,8 +173,8 @@ export class Zovas {
                 }
                 this.render();
             } else {
-                const mouseover = this.items.filter(item => item.isBorder(x, y))[0];
-                if (mouseover) {
+                const mouseover = this.items.filter(item => item.isBorder(x, y) || item.isHit(x, y)).reverse()[0];
+                if (mouseover && mouseover.isBorder(x, y)) {
                     switch (mouseover.getHitPos(x, y)) {
                         case Position.Bottom: this.canvas.style.cursor = 's-resize'; break;
                         case Position.Left: this.canvas.style.cursor = 'w-resize'; break;
