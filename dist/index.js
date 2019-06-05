@@ -1,6 +1,96 @@
 var zovas = (function (exports) {
     'use strict';
 
+    (function (CanvasItemType) {
+        CanvasItemType["Rect"] = "rect";
+    })(exports.CanvasItemType || (exports.CanvasItemType = {}));
+    (function (Position) {
+        Position["Left"] = "left";
+        Position["Right"] = "right";
+        Position["Top"] = "top";
+        Position["Bottom"] = "bottom";
+        Position["LeftTop"] = "leftTop";
+        Position["LeftBottom"] = "leftBottom";
+        Position["RightTop"] = "rightTop";
+        Position["RightBottom"] = "rightBottom";
+        Position["None"] = "None";
+    })(exports.Position || (exports.Position = {}));
+    const RADIUS = 5;
+    class CanvasItem {
+        constructor(options) {
+            this.fill = 'black';
+            this.resizeType = exports.Position.None;
+            this.resizePrefix = {
+                x: 0,
+                y: 0
+            };
+            this.name = options.name;
+            this.fill = options.fill;
+            if (options.position) {
+                this.position = {
+                    x: options.position[0],
+                    y: options.position[1]
+                };
+            }
+        }
+        isHit(x, y) {
+            return x > this.position.x + 2 && x < this.position.x + this.width - 2 && y > this.position.y + 2 && y < this.position.y + this.height - 2;
+        }
+        move(posX, posY) {
+            this.position = {
+                x: posX,
+                y: posY
+            };
+        }
+        isBorder(x, y) {
+            return this.isHitBottom(x, y) || this.isHitLeft(x, y) || this.isHitLeftBottom(x, y) || this.isHitLeftTop(x, y) || this.isHitRight(x, y)
+                || this.isHitRightBottom(x, y) || this.isHitRightTop(x, y) || this.isHitTop(x, y);
+        }
+        getHitPos(x, y) {
+            if (this.isHitBottom(x, y))
+                return exports.Position.Bottom;
+            if (this.isHitLeft(x, y))
+                return exports.Position.Left;
+            if (this.isHitLeftBottom(x, y))
+                return exports.Position.LeftBottom;
+            if (this.isHitLeftTop(x, y))
+                return exports.Position.LeftTop;
+            if (this.isHitRight(x, y))
+                return exports.Position.Right;
+            if (this.isHitRightBottom(x, y))
+                return exports.Position.RightBottom;
+            if (this.isHitRightTop(x, y))
+                return exports.Position.RightTop;
+            if (this.isHitTop(x, y))
+                return exports.Position.Top;
+            return exports.Position.None;
+        }
+        isHitLeftTop(x, y) {
+            return x >= this.position.x - RADIUS && x <= this.position.x + RADIUS && y >= this.position.y - RADIUS && y <= this.position.y + RADIUS;
+        }
+        isHitRightTop(x, y) {
+            return x >= this.position.x + this.width - RADIUS && x <= this.position.x + this.width + RADIUS && y >= this.position.y - RADIUS && y <= this.position.y + RADIUS;
+        }
+        isHitLeftBottom(x, y) {
+            return x >= this.position.x - RADIUS && x <= this.position.x + RADIUS && y >= this.position.y + this.height - RADIUS && y <= this.position.y + this.height + RADIUS;
+        }
+        isHitRightBottom(x, y) {
+            return x >= this.position.x + this.width - RADIUS && x <= this.position.x + this.width + RADIUS && y >= this.position.y + this.height - RADIUS && y <= this.position.y + this.height + RADIUS;
+        }
+        isHitLeft(x, y) {
+            return x >= this.position.x - RADIUS && x <= this.position.x + RADIUS && y > this.position.y + RADIUS && y <= this.position.y + this.height - RADIUS;
+        }
+        isHitRight(x, y) {
+            return x >= this.position.x + this.width - RADIUS && x <= this.position.x + this.width + RADIUS && y > this.position.y + RADIUS && y <= this.position.y + this.height - RADIUS;
+        }
+        isHitTop(x, y) {
+            return x > this.position.x + RADIUS && x < this.position.x + this.width - RADIUS && y >= this.position.y - RADIUS && y <= this.position.y + RADIUS;
+        }
+        isHitBottom(x, y) {
+            return x > this.position.x + RADIUS && x < this.position.x + this.width - RADIUS && y >= this.position.y + this.height - RADIUS && y <= this.position.y + this.height + RADIUS;
+        }
+    }
+
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -1721,75 +1811,6 @@ var zovas = (function (exports) {
     /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
 
     /** PURE_IMPORTS_START tslib,_Subscriber,_util_noop,_util_isFunction PURE_IMPORTS_END */
-    function tap(nextOrObserver, error, complete) {
-        return function tapOperatorFunction(source) {
-            return source.lift(new DoOperator(nextOrObserver, error, complete));
-        };
-    }
-    var DoOperator = /*@__PURE__*/ (function () {
-        function DoOperator(nextOrObserver, error, complete) {
-            this.nextOrObserver = nextOrObserver;
-            this.error = error;
-            this.complete = complete;
-        }
-        DoOperator.prototype.call = function (subscriber, source) {
-            return source.subscribe(new TapSubscriber(subscriber, this.nextOrObserver, this.error, this.complete));
-        };
-        return DoOperator;
-    }());
-    var TapSubscriber = /*@__PURE__*/ (function (_super) {
-        __extends(TapSubscriber, _super);
-        function TapSubscriber(destination, observerOrNext, error, complete) {
-            var _this = _super.call(this, destination) || this;
-            _this._tapNext = noop;
-            _this._tapError = noop;
-            _this._tapComplete = noop;
-            _this._tapError = error || noop;
-            _this._tapComplete = complete || noop;
-            if (isFunction(observerOrNext)) {
-                _this._context = _this;
-                _this._tapNext = observerOrNext;
-            }
-            else if (observerOrNext) {
-                _this._context = observerOrNext;
-                _this._tapNext = observerOrNext.next || noop;
-                _this._tapError = observerOrNext.error || noop;
-                _this._tapComplete = observerOrNext.complete || noop;
-            }
-            return _this;
-        }
-        TapSubscriber.prototype._next = function (value) {
-            try {
-                this._tapNext.call(this._context, value);
-            }
-            catch (err) {
-                this.destination.error(err);
-                return;
-            }
-            this.destination.next(value);
-        };
-        TapSubscriber.prototype._error = function (err) {
-            try {
-                this._tapError.call(this._context, err);
-            }
-            catch (err) {
-                this.destination.error(err);
-                return;
-            }
-            this.destination.error(err);
-        };
-        TapSubscriber.prototype._complete = function () {
-            try {
-                this._tapComplete.call(this._context);
-            }
-            catch (err) {
-                this.destination.error(err);
-                return;
-            }
-            return this.destination.complete();
-        };
-        return TapSubscriber;
-    }(Subscriber));
 
     /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
 
@@ -1831,6 +1852,7 @@ var zovas = (function (exports) {
                 y: 0
             };
             this.dragItem = null;
+            this.resizeItem = null;
             try {
                 if (typeof element === 'string') {
                     element = document.getElementById(element);
@@ -1848,11 +1870,13 @@ var zovas = (function (exports) {
                 const mouseDown = fromEvent(document, 'mousedown');
                 const mouseUp = fromEvent(document, 'mouseup');
                 const mouseMove = fromEvent(document, 'mousemove');
-                mouseDown.pipe(merge$1(mouseUp), merge$1(mouseMove), auditTime(8.333), map((e) => {
+                mouseDown.pipe(merge$1(mouseUp), map((e) => {
                     return e;
-                }), tap(this.handleEvent.bind(this))).subscribe(_ => {
-                    this.render();
-                });
+                }))
+                    .subscribe(this.handleDrag.bind(this));
+                mouseMove.pipe(merge$1(mouseMove), auditTime(8.333), map((e) => {
+                    return e;
+                })).subscribe(this.handleMove.bind(this));
             }
             catch (error) {
                 console.log(`Init failed: ${error}`);
@@ -1887,51 +1911,146 @@ var zovas = (function (exports) {
         getPos(x, y) {
             return [x - this.canvas.offsetLeft - this.prefix.x, y - this.canvas.offsetTop - this.prefix.y];
         }
-        handleEvent(e) {
-            if (e.target === this.canvas && this.isInCanvas(e.clientX, e.clientY)) {
+        handleDrag(e) {
+            if (e.target === this.canvas /*&& this.isInCanvas(e.clientX, e.clientY)*/) {
                 const [x, y] = this.getPos(e.clientX, e.clientY);
                 if (e.type === 'mousedown') {
-                    const target = this.items.filter(item => item.isHit(x, y))[0];
+                    const target = this.items.filter(item => item.isHit(x, y) || item.isBorder(x, y))[0];
                     if (target) {
-                        target.anchor = {
-                            x: x - target.position.x,
-                            y: y - target.position.y
-                        };
-                        this.dragItem = target;
+                        if (target.isBorder(x, y)) {
+                            this.resizeItem = target;
+                            this.resizeItem.resizeType = this.resizeItem.getHitPos(x, y);
+                            const xa = this.resizeItem.position.x - x;
+                            const ya = this.resizeItem.position.y - y;
+                            const xb = this.resizeItem.position.x + this.resizeItem.width - x;
+                            const yb = this.resizeItem.position.y + this.resizeItem.height - y;
+                            this.resizeItem.resizePrefix.x = Math.abs(xa) < Math.abs(xb) ? xa : xb;
+                            this.resizeItem.resizePrefix.y = Math.abs(ya) < Math.abs(yb) ? ya : yb;
+                        }
+                        else {
+                            target.anchor = {
+                                x: x - target.position.x,
+                                y: y - target.position.y
+                            };
+                            this.dragItem = target;
+                        }
                     }
                 }
-                if (e.type === 'mouseup' && this.dragItem !== null) {
-                    this.dragItem = null;
+            }
+            if (e.type === 'mouseup') {
+                this.dragItem = null;
+                if (this.resizeItem !== null) {
+                    this.resizeItem.resizeType = exports.Position.None;
+                    this.resizeItem = null;
                 }
-                if (e.type === 'mousemove' && this.dragItem) {
-                    this.dragItem.move(x - this.dragItem.anchor.x, y - this.dragItem.anchor.y);
+            }
+        }
+        handleMove(e) {
+            if (e.type === 'mousemove') {
+                //TODO 点下的时候瞬间误差会导致图形有微小的调整
+                let [x, y] = this.getPos(e.clientX, e.clientY);
+                if (this.dragItem !== null) {
+                    this.dragItem.move(inRange(x - this.dragItem.anchor.x, 0, this.width - this.dragItem.width), inRange(y - this.dragItem.anchor.y, 0, this.height - this.dragItem.height));
                     this.render();
+                }
+                else if (this.resizeItem !== null) {
+                    let left = false;
+                    let right = false;
+                    let top = false;
+                    let bottom = false;
+                    switch (this.resizeItem.resizeType) {
+                        case exports.Position.Bottom:
+                            bottom = true;
+                            break;
+                        case exports.Position.Left:
+                            left = true;
+                            break;
+                        case exports.Position.LeftBottom:
+                            bottom = true;
+                            left = true;
+                            break;
+                        case exports.Position.LeftTop:
+                            top = true;
+                            left = true;
+                            break;
+                        case exports.Position.Right:
+                            right = true;
+                            break;
+                        case exports.Position.RightBottom:
+                            right = true;
+                            bottom = true;
+                            break;
+                        case exports.Position.RightTop:
+                            right = true;
+                            top = true;
+                            break;
+                        case exports.Position.Top:
+                            top = true;
+                            break;
+                        default: break;
+                    }
+                    x = x + this.resizeItem.resizePrefix.x;
+                    y = y + this.resizeItem.resizePrefix.y;
+                    if (right) {
+                        this.resizeItem.width = inRange(x - this.resizeItem.position.x, 2, this.width - this.resizeItem.position.x);
+                    }
+                    if (bottom) {
+                        this.resizeItem.height = inRange(y - this.resizeItem.position.y, 2, this.height - this.resizeItem.position.y);
+                    }
+                    if (left) {
+                        const diff = this.resizeItem.position.x - (Math.max(x, 0));
+                        this.resizeItem.position.x -= diff;
+                        this.resizeItem.width += diff;
+                    }
+                    if (top) {
+                        const diff = this.resizeItem.position.y - (Math.max(y, 0));
+                        this.resizeItem.position.y -= diff;
+                        this.resizeItem.height += diff;
+                    }
+                    this.render();
+                }
+                else {
+                    const mouseover = this.items.filter(item => item.isBorder(x, y))[0];
+                    if (mouseover) {
+                        switch (mouseover.getHitPos(x, y)) {
+                            case exports.Position.Bottom:
+                                this.canvas.style.cursor = 's-resize';
+                                break;
+                            case exports.Position.Left:
+                                this.canvas.style.cursor = 'w-resize';
+                                break;
+                            case exports.Position.LeftBottom:
+                                this.canvas.style.cursor = 'sw-resize';
+                                break;
+                            case exports.Position.LeftTop:
+                                this.canvas.style.cursor = 'nw-resize';
+                                break;
+                            case exports.Position.Right:
+                                this.canvas.style.cursor = 'e-resize';
+                                break;
+                            case exports.Position.RightBottom:
+                                this.canvas.style.cursor = 'se-resize';
+                                break;
+                            case exports.Position.RightTop:
+                                this.canvas.style.cursor = 'ne-resize';
+                                break;
+                            case exports.Position.Top:
+                                this.canvas.style.cursor = 'n-resize';
+                                break;
+                            default:
+                                this.canvas.style.cursor = 'default';
+                                break;
+                        }
+                    }
+                    else {
+                        this.canvas.style.cursor = 'default';
+                    }
                 }
             }
         }
     }
-
-    (function (CanvasItemType) {
-        CanvasItemType["Rect"] = "rect";
-    })(exports.CanvasItemType || (exports.CanvasItemType = {}));
-    class CanvasItem {
-        constructor(options) {
-            this.fill = 'black';
-            this.name = options.name;
-            this.fill = options.fill;
-            if (options.position) {
-                this.position = {
-                    x: options.position[0],
-                    y: options.position[1]
-                };
-            }
-        }
-        move(posX, posY) {
-            this.position = {
-                x: posX,
-                y: posY
-            };
-        }
+    function inRange(x, min, max) {
+        return x < min ? min : x > max ? max : x;
     }
 
     class CanvasRect extends CanvasItem {
@@ -1944,9 +2063,6 @@ var zovas = (function (exports) {
         draw(ctx) {
             ctx.fillStyle = this.fill;
             ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
-        }
-        isHit(x, y) {
-            return x >= this.position.x && x <= this.position.x + this.width && y >= this.position.y && y <= this.position.y + this.height;
         }
     }
 
