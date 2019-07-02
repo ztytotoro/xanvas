@@ -22,11 +22,12 @@
             width: 100,
             height: 100
         }));
-        canvas.add(new zovas.CanvasRect({
+        canvas.add(new zovas.CanvasImage({
             name: 'rect',
             fill: 'red',
             width: 150,
-            height: 150
+            height: 150,
+            url: 'test.png'
         }), 20, 20);
         canvas.render();
     }

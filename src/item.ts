@@ -4,7 +4,8 @@ export interface Coordinate {
 }
 
 export enum CanvasItemType {
-    Rect = 'rect'
+    Rect = 'rect',
+    Image = 'image'
 }
 
 export enum Position {
@@ -22,7 +23,9 @@ export enum Position {
 export interface CanvasItemOption {
     name: string;
     fill: string;
-    position?: [number, number]
+    position?: [number, number];
+    width: number;
+    height: number;
 }
 
 const RADIUS = 5;

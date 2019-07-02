@@ -3,6 +3,7 @@ var zovas = (function (exports) {
 
     (function (CanvasItemType) {
         CanvasItemType["Rect"] = "rect";
+        CanvasItemType["Image"] = "image";
     })(exports.CanvasItemType || (exports.CanvasItemType = {}));
     (function (Position) {
         Position["Left"] = "left";
@@ -695,7 +696,7 @@ var zovas = (function (exports) {
     }());
     function getPromiseCtor(promiseCtor) {
         if (!promiseCtor) {
-            promiseCtor = Promise;
+            promiseCtor =  Promise;
         }
         if (!promiseCtor) {
             throw new Error('no Promise impl found');
@@ -704,18 +705,230 @@ var zovas = (function (exports) {
     }
 
     /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+    function ObjectUnsubscribedErrorImpl() {
+        Error.call(this);
+        this.message = 'object unsubscribed';
+        this.name = 'ObjectUnsubscribedError';
+        return this;
+    }
+    ObjectUnsubscribedErrorImpl.prototype = /*@__PURE__*/ Object.create(Error.prototype);
+    var ObjectUnsubscribedError = ObjectUnsubscribedErrorImpl;
 
     /** PURE_IMPORTS_START tslib,_Subscription PURE_IMPORTS_END */
+    var SubjectSubscription = /*@__PURE__*/ (function (_super) {
+        __extends(SubjectSubscription, _super);
+        function SubjectSubscription(subject, subscriber) {
+            var _this = _super.call(this) || this;
+            _this.subject = subject;
+            _this.subscriber = subscriber;
+            _this.closed = false;
+            return _this;
+        }
+        SubjectSubscription.prototype.unsubscribe = function () {
+            if (this.closed) {
+                return;
+            }
+            this.closed = true;
+            var subject = this.subject;
+            var observers = subject.observers;
+            this.subject = null;
+            if (!observers || observers.length === 0 || subject.isStopped || subject.closed) {
+                return;
+            }
+            var subscriberIndex = observers.indexOf(this.subscriber);
+            if (subscriberIndex !== -1) {
+                observers.splice(subscriberIndex, 1);
+            }
+        };
+        return SubjectSubscription;
+    }(Subscription));
 
     /** PURE_IMPORTS_START tslib,_Observable,_Subscriber,_Subscription,_util_ObjectUnsubscribedError,_SubjectSubscription,_internal_symbol_rxSubscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subject,_Observable,_Subscriber,_Subscription,_operators_refCount PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_Subscription,_Observable,_Subject PURE_IMPORTS_END */
+    var SubjectSubscriber = /*@__PURE__*/ (function (_super) {
+        __extends(SubjectSubscriber, _super);
+        function SubjectSubscriber(destination) {
+            var _this = _super.call(this, destination) || this;
+            _this.destination = destination;
+            return _this;
+        }
+        return SubjectSubscriber;
+    }(Subscriber));
+    var Subject = /*@__PURE__*/ (function (_super) {
+        __extends(Subject, _super);
+        function Subject() {
+            var _this = _super.call(this) || this;
+            _this.observers = [];
+            _this.closed = false;
+            _this.isStopped = false;
+            _this.hasError = false;
+            _this.thrownError = null;
+            return _this;
+        }
+        Subject.prototype[rxSubscriber] = function () {
+            return new SubjectSubscriber(this);
+        };
+        Subject.prototype.lift = function (operator) {
+            var subject = new AnonymousSubject(this, this);
+            subject.operator = operator;
+            return subject;
+        };
+        Subject.prototype.next = function (value) {
+            if (this.closed) {
+                throw new ObjectUnsubscribedError();
+            }
+            if (!this.isStopped) {
+                var observers = this.observers;
+                var len = observers.length;
+                var copy = observers.slice();
+                for (var i = 0; i < len; i++) {
+                    copy[i].next(value);
+                }
+            }
+        };
+        Subject.prototype.error = function (err) {
+            if (this.closed) {
+                throw new ObjectUnsubscribedError();
+            }
+            this.hasError = true;
+            this.thrownError = err;
+            this.isStopped = true;
+            var observers = this.observers;
+            var len = observers.length;
+            var copy = observers.slice();
+            for (var i = 0; i < len; i++) {
+                copy[i].error(err);
+            }
+            this.observers.length = 0;
+        };
+        Subject.prototype.complete = function () {
+            if (this.closed) {
+                throw new ObjectUnsubscribedError();
+            }
+            this.isStopped = true;
+            var observers = this.observers;
+            var len = observers.length;
+            var copy = observers.slice();
+            for (var i = 0; i < len; i++) {
+                copy[i].complete();
+            }
+            this.observers.length = 0;
+        };
+        Subject.prototype.unsubscribe = function () {
+            this.isStopped = true;
+            this.closed = true;
+            this.observers = null;
+        };
+        Subject.prototype._trySubscribe = function (subscriber) {
+            if (this.closed) {
+                throw new ObjectUnsubscribedError();
+            }
+            else {
+                return _super.prototype._trySubscribe.call(this, subscriber);
+            }
+        };
+        Subject.prototype._subscribe = function (subscriber) {
+            if (this.closed) {
+                throw new ObjectUnsubscribedError();
+            }
+            else if (this.hasError) {
+                subscriber.error(this.thrownError);
+                return Subscription.EMPTY;
+            }
+            else if (this.isStopped) {
+                subscriber.complete();
+                return Subscription.EMPTY;
+            }
+            else {
+                this.observers.push(subscriber);
+                return new SubjectSubscription(this, subscriber);
+            }
+        };
+        Subject.prototype.asObservable = function () {
+            var observable = new Observable();
+            observable.source = this;
+            return observable;
+        };
+        Subject.create = function (destination, source) {
+            return new AnonymousSubject(destination, source);
+        };
+        return Subject;
+    }(Observable));
+    var AnonymousSubject = /*@__PURE__*/ (function (_super) {
+        __extends(AnonymousSubject, _super);
+        function AnonymousSubject(destination, source) {
+            var _this = _super.call(this) || this;
+            _this.destination = destination;
+            _this.source = source;
+            return _this;
+        }
+        AnonymousSubject.prototype.next = function (value) {
+            var destination = this.destination;
+            if (destination && destination.next) {
+                destination.next(value);
+            }
+        };
+        AnonymousSubject.prototype.error = function (err) {
+            var destination = this.destination;
+            if (destination && destination.error) {
+                this.destination.error(err);
+            }
+        };
+        AnonymousSubject.prototype.complete = function () {
+            var destination = this.destination;
+            if (destination && destination.complete) {
+                this.destination.complete();
+            }
+        };
+        AnonymousSubject.prototype._subscribe = function (subscriber) {
+            var source = this.source;
+            if (source) {
+                return this.source.subscribe(subscriber);
+            }
+            else {
+                return Subscription.EMPTY;
+            }
+        };
+        return AnonymousSubject;
+    }(Subject));
 
     /** PURE_IMPORTS_START tslib,_Subject,_util_ObjectUnsubscribedError PURE_IMPORTS_END */
+    var BehaviorSubject = /*@__PURE__*/ (function (_super) {
+        __extends(BehaviorSubject, _super);
+        function BehaviorSubject(_value) {
+            var _this = _super.call(this) || this;
+            _this._value = _value;
+            return _this;
+        }
+        Object.defineProperty(BehaviorSubject.prototype, "value", {
+            get: function () {
+                return this.getValue();
+            },
+            enumerable: true,
+            configurable: true
+        });
+        BehaviorSubject.prototype._subscribe = function (subscriber) {
+            var subscription = _super.prototype._subscribe.call(this, subscriber);
+            if (subscription && !subscription.closed) {
+                subscriber.next(this._value);
+            }
+            return subscription;
+        };
+        BehaviorSubject.prototype.getValue = function () {
+            if (this.hasError) {
+                throw this.thrownError;
+            }
+            else if (this.closed) {
+                throw new ObjectUnsubscribedError();
+            }
+            else {
+                return this._value;
+            }
+        };
+        BehaviorSubject.prototype.next = function (value) {
+            _super.prototype.next.call(this, this._value = value);
+        };
+        return BehaviorSubject;
+    }(Subject));
 
     /** PURE_IMPORTS_START tslib,_Subscription PURE_IMPORTS_END */
     var Action = /*@__PURE__*/ (function (_super) {
@@ -724,9 +937,6 @@ var zovas = (function (exports) {
             return _super.call(this) || this;
         }
         Action.prototype.schedule = function (state, delay) {
-            if (delay === void 0) {
-                delay = 0;
-            }
             return this;
         };
         return Action;
@@ -824,8 +1034,6 @@ var zovas = (function (exports) {
         return AsyncAction;
     }(Action));
 
-    /** PURE_IMPORTS_START tslib,_AsyncAction PURE_IMPORTS_END */
-
     var Scheduler = /*@__PURE__*/ (function () {
         function Scheduler(SchedulerAction, now) {
             if (now === void 0) {
@@ -899,11 +1107,14 @@ var zovas = (function (exports) {
         return AsyncScheduler;
     }(Scheduler));
 
-    /** PURE_IMPORTS_START tslib,_AsyncScheduler PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _QueueAction,_QueueScheduler PURE_IMPORTS_END */
-
     /** PURE_IMPORTS_START _Observable PURE_IMPORTS_END */
+    var EMPTY = /*@__PURE__*/ new Observable(function (subscriber) { return subscriber.complete(); });
+    function empty$1(scheduler) {
+        return scheduler ? emptyScheduled(scheduler) : EMPTY;
+    }
+    function emptyScheduled(scheduler) {
+        return new Observable(function (subscriber) { return scheduler.schedule(function () { return subscriber.complete(); }); });
+    }
 
     /** PURE_IMPORTS_START  PURE_IMPORTS_END */
     function isScheduler(value) {
@@ -949,49 +1160,33 @@ var zovas = (function (exports) {
         }
     }
 
-    /** PURE_IMPORTS_START _util_isScheduler,_fromArray,_scheduled_scheduleArray PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _Observable PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _observable_empty,_observable_of,_observable_throwError PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_Notification PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subject,_scheduler_queue,_Subscription,_operators_observeOn,_util_ObjectUnsubscribedError,_SubjectSubscription PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subject,_Subscription PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START  PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_util_Immediate,_AsyncAction PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_AsyncScheduler PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _AsapAction,_AsapScheduler PURE_IMPORTS_END */
-
     /** PURE_IMPORTS_START _AsyncAction,_AsyncScheduler PURE_IMPORTS_END */
     var async = /*@__PURE__*/ new AsyncScheduler(AsyncAction);
-
-    /** PURE_IMPORTS_START tslib,_AsyncAction PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_AsyncScheduler PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _AnimationFrameAction,_AnimationFrameScheduler PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_AsyncAction,_AsyncScheduler PURE_IMPORTS_END */
 
     /** PURE_IMPORTS_START  PURE_IMPORTS_END */
     function identity(x) {
         return x;
     }
 
-    /** PURE_IMPORTS_START _Observable PURE_IMPORTS_END */
+    /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+    function ArgumentOutOfRangeErrorImpl() {
+        Error.call(this);
+        this.message = 'argument out of range';
+        this.name = 'ArgumentOutOfRangeError';
+        return this;
+    }
+    ArgumentOutOfRangeErrorImpl.prototype = /*@__PURE__*/ Object.create(Error.prototype);
+    var ArgumentOutOfRangeError = ArgumentOutOfRangeErrorImpl;
 
     /** PURE_IMPORTS_START  PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START  PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START  PURE_IMPORTS_END */
+    function EmptyErrorImpl() {
+        Error.call(this);
+        this.message = 'no elements in sequence';
+        this.name = 'EmptyError';
+        return this;
+    }
+    EmptyErrorImpl.prototype = /*@__PURE__*/ Object.create(Error.prototype);
+    var EmptyError = EmptyErrorImpl;
 
     /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
     function map(project, thisArg) {
@@ -1034,10 +1229,6 @@ var zovas = (function (exports) {
         };
         return MapSubscriber;
     }(Subscriber));
-
-    /** PURE_IMPORTS_START _Observable,_AsyncSubject,_operators_map,_util_canReportError,_util_isArray,_util_isScheduler PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _Observable,_AsyncSubject,_operators_map,_util_canReportError,_util_isScheduler,_util_isArray PURE_IMPORTS_END */
 
     /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
     var OuterSubscriber = /*@__PURE__*/ (function (_super) {
@@ -1187,8 +1378,6 @@ var zovas = (function (exports) {
         }
         return subscribeTo(result)(destination);
     }
-
-    /** PURE_IMPORTS_START tslib,_util_isScheduler,_util_isArray,_OuterSubscriber,_util_subscribeToResult,_fromArray PURE_IMPORTS_END */
 
     /** PURE_IMPORTS_START _Observable,_Subscription,_symbol_observable PURE_IMPORTS_END */
     function scheduleObservable(input, scheduler) {
@@ -1409,14 +1598,6 @@ var zovas = (function (exports) {
         return mergeMap(identity, concurrent);
     }
 
-    /** PURE_IMPORTS_START _mergeAll PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _of,_operators_concatAll PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _Observable,_from,_empty PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _Observable,_util_isArray,_operators_map,_util_isObject,_from PURE_IMPORTS_END */
-
     /** PURE_IMPORTS_START _Observable,_util_isArray,_util_isFunction,_operators_map PURE_IMPORTS_END */
     function fromEvent(target, eventName, options, resultSelector) {
         if (isFunction(options)) {
@@ -1475,18 +1656,10 @@ var zovas = (function (exports) {
         return sourceObj && typeof sourceObj.addEventListener === 'function' && typeof sourceObj.removeEventListener === 'function';
     }
 
-    /** PURE_IMPORTS_START _Observable,_util_isArray,_util_isFunction,_operators_map PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _Observable,_util_identity,_util_isScheduler PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _defer,_empty PURE_IMPORTS_END */
-
     /** PURE_IMPORTS_START _isArray PURE_IMPORTS_END */
     function isNumeric(val) {
         return !isArray(val) && (val - parseFloat(val) + 1) >= 0;
     }
-
-    /** PURE_IMPORTS_START _Observable,_scheduler_async,_util_isNumeric PURE_IMPORTS_END */
 
     /** PURE_IMPORTS_START _Observable,_util_isScheduler,_operators_mergeAll,_fromArray PURE_IMPORTS_END */
     function merge() {
@@ -1512,21 +1685,46 @@ var zovas = (function (exports) {
         return mergeAll(concurrent)(fromArray(observables, scheduler));
     }
 
-    /** PURE_IMPORTS_START _Observable,_util_noop PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _Observable,_from,_util_isArray,_empty PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _Observable,_Subscription PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START  PURE_IMPORTS_END */
-
     /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _util_not,_util_subscribeTo,_operators_filter,_Observable PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_util_isArray,_fromArray,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _Observable PURE_IMPORTS_END */
+    function filter(predicate, thisArg) {
+        return function filterOperatorFunction(source) {
+            return source.lift(new FilterOperator(predicate, thisArg));
+        };
+    }
+    var FilterOperator = /*@__PURE__*/ (function () {
+        function FilterOperator(predicate, thisArg) {
+            this.predicate = predicate;
+            this.thisArg = thisArg;
+        }
+        FilterOperator.prototype.call = function (subscriber, source) {
+            return source.subscribe(new FilterSubscriber(subscriber, this.predicate, this.thisArg));
+        };
+        return FilterOperator;
+    }());
+    var FilterSubscriber = /*@__PURE__*/ (function (_super) {
+        __extends(FilterSubscriber, _super);
+        function FilterSubscriber(destination, predicate, thisArg) {
+            var _this = _super.call(this, destination) || this;
+            _this.predicate = predicate;
+            _this.thisArg = thisArg;
+            _this.count = 0;
+            return _this;
+        }
+        FilterSubscriber.prototype._next = function (value) {
+            var result;
+            try {
+                result = this.predicate.call(this.thisArg, value, this.count++);
+            }
+            catch (err) {
+                this.destination.error(err);
+                return;
+            }
+            if (result) {
+                this.destination.next(value);
+            }
+        };
+        return FilterSubscriber;
+    }(Subscriber));
 
     /** PURE_IMPORTS_START _Observable,_scheduler_async,_util_isNumeric,_util_isScheduler PURE_IMPORTS_END */
     function timer(dueTime, periodOrScheduler, scheduler) {
@@ -1564,12 +1762,6 @@ var zovas = (function (exports) {
         state.index = index + 1;
         this.schedule(state, period);
     }
-
-    /** PURE_IMPORTS_START _Observable,_from,_empty PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_fromArray,_util_isArray,_Subscriber,_OuterSubscriber,_util_subscribeToResult,_.._internal_symbol_iterator PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START  PURE_IMPORTS_END */
 
     /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
     function audit(durationSelector) {
@@ -1645,91 +1837,144 @@ var zovas = (function (exports) {
         return audit(function () { return timer(duration, scheduler); });
     }
 
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
     /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_scheduler_async,_Subscriber,_util_isScheduler PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscription,_util_subscribeToResult,_OuterSubscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscription,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_InnerSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _observable_combineLatest PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _util_isArray,_observable_combineLatest,_observable_from PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _observable_concat PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _mergeMap PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _concatMap PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_scheduler_async PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START  PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_scheduler_async,_util_isDate,_Subscriber,_Notification PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_Observable,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _distinctUntilChanged PURE_IMPORTS_END */
+    function defaultIfEmpty(defaultValue) {
+        if (defaultValue === void 0) {
+            defaultValue = null;
+        }
+        return function (source) { return source.lift(new DefaultIfEmptyOperator(defaultValue)); };
+    }
+    var DefaultIfEmptyOperator = /*@__PURE__*/ (function () {
+        function DefaultIfEmptyOperator(defaultValue) {
+            this.defaultValue = defaultValue;
+        }
+        DefaultIfEmptyOperator.prototype.call = function (subscriber, source) {
+            return source.subscribe(new DefaultIfEmptySubscriber(subscriber, this.defaultValue));
+        };
+        return DefaultIfEmptyOperator;
+    }());
+    var DefaultIfEmptySubscriber = /*@__PURE__*/ (function (_super) {
+        __extends(DefaultIfEmptySubscriber, _super);
+        function DefaultIfEmptySubscriber(destination, defaultValue) {
+            var _this = _super.call(this, destination) || this;
+            _this.defaultValue = defaultValue;
+            _this.isEmpty = true;
+            return _this;
+        }
+        DefaultIfEmptySubscriber.prototype._next = function (value) {
+            this.isEmpty = false;
+            this.destination.next(value);
+        };
+        DefaultIfEmptySubscriber.prototype._complete = function () {
+            if (this.isEmpty) {
+                this.destination.next(this.defaultValue);
+            }
+            this.destination.complete();
+        };
+        return DefaultIfEmptySubscriber;
+    }(Subscriber));
 
     /** PURE_IMPORTS_START tslib,_util_EmptyError,_Subscriber PURE_IMPORTS_END */
+    function throwIfEmpty(errorFactory) {
+        if (errorFactory === void 0) {
+            errorFactory = defaultErrorFactory;
+        }
+        return function (source) {
+            return source.lift(new ThrowIfEmptyOperator(errorFactory));
+        };
+    }
+    var ThrowIfEmptyOperator = /*@__PURE__*/ (function () {
+        function ThrowIfEmptyOperator(errorFactory) {
+            this.errorFactory = errorFactory;
+        }
+        ThrowIfEmptyOperator.prototype.call = function (subscriber, source) {
+            return source.subscribe(new ThrowIfEmptySubscriber(subscriber, this.errorFactory));
+        };
+        return ThrowIfEmptyOperator;
+    }());
+    var ThrowIfEmptySubscriber = /*@__PURE__*/ (function (_super) {
+        __extends(ThrowIfEmptySubscriber, _super);
+        function ThrowIfEmptySubscriber(destination, errorFactory) {
+            var _this = _super.call(this, destination) || this;
+            _this.errorFactory = errorFactory;
+            _this.hasValue = false;
+            return _this;
+        }
+        ThrowIfEmptySubscriber.prototype._next = function (value) {
+            this.hasValue = true;
+            this.destination.next(value);
+        };
+        ThrowIfEmptySubscriber.prototype._complete = function () {
+            if (!this.hasValue) {
+                var err = void 0;
+                try {
+                    err = this.errorFactory();
+                }
+                catch (e) {
+                    err = e;
+                }
+                this.destination.error(err);
+            }
+            else {
+                return this.destination.complete();
+            }
+        };
+        return ThrowIfEmptySubscriber;
+    }(Subscriber));
+    function defaultErrorFactory() {
+        return new EmptyError();
+    }
 
     /** PURE_IMPORTS_START tslib,_Subscriber,_util_ArgumentOutOfRangeError,_observable_empty PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _util_ArgumentOutOfRangeError,_filter,_throwIfEmpty,_defaultIfEmpty,_take PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _observable_concat,_observable_of PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_InnerSubscriber,_util_subscribeToResult,_map,_observable_from PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_Subscription PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _operators_find PURE_IMPORTS_END */
+    function take(count) {
+        return function (source) {
+            if (count === 0) {
+                return empty$1();
+            }
+            else {
+                return source.lift(new TakeOperator(count));
+            }
+        };
+    }
+    var TakeOperator = /*@__PURE__*/ (function () {
+        function TakeOperator(total) {
+            this.total = total;
+            if (this.total < 0) {
+                throw new ArgumentOutOfRangeError;
+            }
+        }
+        TakeOperator.prototype.call = function (subscriber, source) {
+            return source.subscribe(new TakeSubscriber(subscriber, this.total));
+        };
+        return TakeOperator;
+    }());
+    var TakeSubscriber = /*@__PURE__*/ (function (_super) {
+        __extends(TakeSubscriber, _super);
+        function TakeSubscriber(destination, total) {
+            var _this = _super.call(this, destination) || this;
+            _this.total = total;
+            _this.count = 0;
+            return _this;
+        }
+        TakeSubscriber.prototype._next = function (value) {
+            var total = this.total;
+            var count = ++this.count;
+            if (count <= total) {
+                this.destination.next(value);
+                if (count === total) {
+                    this.destination.complete();
+                    this.unsubscribe();
+                }
+            }
+        };
+        return TakeSubscriber;
+    }(Subscriber));
 
     /** PURE_IMPORTS_START _util_EmptyError,_filter,_take,_defaultIfEmpty,_throwIfEmpty,_util_identity PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_util_ArgumentOutOfRangeError,_observable_empty PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _util_EmptyError,_filter,_takeLast,_throwIfEmpty,_defaultIfEmpty,_util_identity PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_Notification PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _scan,_takeLast,_defaultIfEmpty,_util_pipe PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _reduce PURE_IMPORTS_END */
+    function first(predicate, defaultValue) {
+        var hasDefaultValue = arguments.length >= 2;
+        return function (source) { return source.pipe(predicate ? filter(function (v, i) { return predicate(v, i, source); }) : identity, take(1), hasDefaultValue ? defaultIfEmpty(defaultValue) : throwIfEmpty(function () { return new EmptyError(); })); };
+    }
 
     /** PURE_IMPORTS_START _observable_merge PURE_IMPORTS_END */
     function merge$1() {
@@ -1739,110 +1984,6 @@ var zovas = (function (exports) {
         }
         return function (source) { return source.lift.call(merge.apply(void 0, [source].concat(observables))); };
     }
-
-    /** PURE_IMPORTS_START _mergeMap PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_util_subscribeToResult,_OuterSubscriber,_InnerSubscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _reduce PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _observable_ConnectableObservable PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_observable_from,_util_isArray,_OuterSubscriber,_InnerSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _util_not,_filter PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _map PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _Subject,_multicast PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _BehaviorSubject,_multicast PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _AsyncSubject,_multicast PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _ReplaySubject,_multicast PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _util_isArray,_observable_race PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_observable_empty PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subject,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subject,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_scheduler_async PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _multicast,_refCount,_Subject PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _ReplaySubject PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_util_EmptyError PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_util_ArgumentOutOfRangeError PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_InnerSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _observable_concat,_util_isScheduler PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Observable,_scheduler_asap,_util_isNumeric PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _observable_SubscribeOnObservable PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_InnerSubscriber,_util_subscribeToResult,_map,_observable_from PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _switchMap,_util_identity PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _switchMap PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_util_noop,_util_isFunction PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_scheduler_async,_throttle PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _scheduler_async,_scan,_observable_defer,_map PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_scheduler_async,_util_isDate,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _scheduler_async,_util_TimeoutError,_timeoutWith,_observable_throwError PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _scheduler_async,_map PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _reduce PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subject,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subscriber,_Subject PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subject,_scheduler_async,_Subscriber,_util_isNumeric,_util_isScheduler PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subject,_Subscription,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_Subject,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START tslib,_OuterSubscriber,_util_subscribeToResult PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _observable_zip PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START _observable_zip PURE_IMPORTS_END */
-
-    /** PURE_IMPORTS_START  PURE_IMPORTS_END */
 
     class Zovas {
         constructor(element) {
@@ -2066,6 +2207,39 @@ var zovas = (function (exports) {
         }
     }
 
+    (function (RepeatType) {
+        RepeatType["Repeat"] = "repeat";
+        RepeatType["RepeatX"] = "repeat-x";
+        RepeatType["RepeatY"] = "repeat-y";
+        RepeatType["NoRepeat"] = "no-repeat";
+    })(exports.RepeatType || (exports.RepeatType = {}));
+    class CanvasImage extends CanvasItem {
+        constructor(options) {
+            super(options);
+            this.type = exports.CanvasItemType.Image;
+            this.image = new BehaviorSubject(null);
+            this.width = options.width;
+            this.height = options.height;
+            this.url = options.url;
+            this.loadImageAsFill();
+        }
+        draw(ctx) {
+            this.image.pipe(filter(x => x !== null), first()).subscribe(img => {
+                if (img !== null) {
+                    ctx.drawImage(img, this.position.x, this.position.y, this.width, this.height);
+                }
+            });
+        }
+        loadImageAsFill() {
+            const blueprint_background = new Image(this.width, this.height);
+            blueprint_background.src = this.url;
+            blueprint_background.onload = () => {
+                this.image.next(blueprint_background);
+            };
+        }
+    }
+
+    exports.CanvasImage = CanvasImage;
     exports.CanvasItem = CanvasItem;
     exports.CanvasRect = CanvasRect;
     exports.Zovas = Zovas;

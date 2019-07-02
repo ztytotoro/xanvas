@@ -4,7 +4,8 @@
   "description": "A canvas library for typescript",
   "main": "src/index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/ztytotoro/xanvas#readme",
   "devDependencies": {
+    "rollup": "^1.16.4",
     "rollup-plugin-node-resolve": "^5.0.1",
     "rollup-plugin-typescript": "^1.0.1",
     "tslib": "^1.9.3",
