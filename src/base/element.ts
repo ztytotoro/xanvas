@@ -15,4 +15,18 @@ export abstract class RectElement extends Element {
 
 export abstract class PathElement extends Element {}
 
-export abstract class VirtualElement extends Element {}
+export abstract class VirtualElement extends Element {
+  constructor(private readonly innerElement: Element) {
+    super();
+  }
+}
+
+export class CombinedElement extends Element {
+  private children: Element[] = [];
+  constructor(...children: Element[]) {
+    super();
+    this.children = children;
+  }
+}
+
+export function CreateElement(options: any, ...pipes: any[]) {}
