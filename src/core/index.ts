@@ -15,6 +15,16 @@ export function initCanvasContext(
   }
 }
 
-interface Brush {
-  fill: string | CanvasGradient | CanvasPattern;
+export function render(
+  container: HTMLDivElement,
+  { height, width }: { height: number; width: number }
+) {
+  container.style.height = height + 'px';
+  container.style.width = width + 'px';
+  const canvas = document.createElement('canvas');
+  container.appendChild(canvas);
+  initCanvasContext(canvas, {
+    height,
+    width
+  });
 }
