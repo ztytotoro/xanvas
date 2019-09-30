@@ -1,30 +1,73 @@
-export function initCanvasContext(
-  canvas: HTMLCanvasElement,
-  { height, width }: { height: number; width: number }
-) {
-  if (canvas.getContext) {
-    if (height) {
-      canvas.height = height;
-    }
-    if (width) {
-      canvas.width = width;
-    }
-    return canvas.getContext('2d');
-  } else {
-    return null;
+import { CanvasElement, CanvasOption, CanvasOptionProducer } from './types';
+import { Subject } from 'rxjs';
+
+export class CanvasCore {
+  doRender = new Subject();
+  items: any[] = [];
+
+  constructor() {
+    this.doRender.subscribe(() => this.render());
+  }
+
+  addItem(item: any) {
+    this.items.push(new item(this.doRender));
+  }
+
+  render() {}
+}
+
+export class CanvasItem {
+  state: CanvasElement;
+  constructor(
+    // private doRender: Subject<unknown>,
+    setOption: CanvasOptionProducer,
+    state: CanvasElement
+  ) {
+    setOption(option => {
+      option.canMove = true;
+      option.canResize = true;
+      option.hasBorder = true;
+    });
+    this.state = state;
+  }
+
+  update(produce: (state: CanvasElement) => CanvasElement) {
+    const oldState = this.state;
+    this.state = produce(this.state);
+    return oldState;
   }
 }
 
-export function render(
-  container: HTMLDivElement,
-  { height, width }: { height: number; width: number }
-) {
-  container.style.height = height + 'px';
-  container.style.width = width + 'px';
-  const canvas = document.createElement('canvas');
-  container.appendChild(canvas);
-  initCanvasContext(canvas, {
-    height,
-    width
-  });
+export function getTargetItem(x: number, y: number, items: any[]) {}
+
+export function moveItem(dx: number, dy: number, item: any) {}
+
+enum OrderType {
+  Top,
+  Up,
+  Down,
+  Bottom
+}
+
+export function orderItem(
+  type: OrderType,
+  currentIndex: number,
+  items: any[]
+) {}
+
+export function invokeCommand(item: any, command: any) {}
+
+export function reverseCommand(command: any) {}
+
+export function setOption(option: CanvasOption): CanvasOptionProducer {
+  return produce => {
+    produce(option);
+    return option;
+  };
+}
+
+export class CanvasSetting implements CanvasOption {
+  canMove = true;
+  canResize = true;
+  hasBorder = true;
 }
