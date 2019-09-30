@@ -1,5 +1,5 @@
 export interface Brush {
-  fill: string | CanvasGradient | CanvasPattern;
+  fill: string | CanvasGradient | CanvasPattern | HTMLImageElement;
 }
 
 export interface Pos {
