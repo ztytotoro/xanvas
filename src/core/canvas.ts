@@ -1,25 +1,21 @@
-import { CanvasOption, CanvasOptionProducer } from './types';
+import { CanvasItemInstance } from './types';
 import { Subject } from 'rxjs';
-import { CanvasItem } from './canvasItem';
 
 export class CanvasCore {
   doRender = new Subject();
-  items: CanvasItem[] = [];
+  items: CanvasItemInstance[] = [];
 
-  constructor() {
+  constructor(private readonly ctx: CanvasRenderingContext2D) {
     this.doRender.subscribe(() => this.render());
   }
 
-  addItem(item: CanvasItem) {
+  addItem(item: CanvasItemInstance) {
     this.items.push(item);
   }
 
-  render() {}
-}
-
-export function setOption(option: CanvasOption): CanvasOptionProducer {
-  return produce => {
-    produce(option);
-    return option;
-  };
+  render() {
+    this.items.forEach(item => {
+      item.draw(this.ctx, item.state);
+    });
+  }
 }

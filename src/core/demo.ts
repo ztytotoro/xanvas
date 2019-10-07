@@ -1,12 +1,19 @@
-import { CanvasSetting } from './operation';
-import { CanvasItem } from '..';
-import { setOption } from './canvas';
+import { createCanvasItem } from './canvasItem';
 
-const item1Option = new CanvasSetting();
-// const item1 = new CanvasItem(setOption(item1Option), {
-//   x: 0,
-//   y: 0,
-//   height: 20,
-//   width: 20,
-//   fill: 'black'
-// });
+const ImageItem = createCanvasItem('image', (ctx, option) => {
+  ctx.fillStyle = option.fill as string;
+  ctx.rect(10, 10, 10, 10);
+});
+
+const instance = ImageItem(
+  {
+    height: 100,
+    width: 100,
+    x: 10,
+    y: 10,
+    fill: 'black'
+  },
+  option => {
+    option.canMove;
+  }
+);

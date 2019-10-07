@@ -1,8 +1,8 @@
-import { CanvasElement } from './types';
+import { CanvasItemOptions } from './types';
 
 export function makeFill(
   type: string | symbol,
-  draw: (ctx: CanvasRenderingContext2D, option: CanvasElement) => void
+  draw: (ctx: CanvasRenderingContext2D, option: CanvasItemOptions) => void
 ) {
   return {
     type,

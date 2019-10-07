@@ -12,7 +12,7 @@ export interface Szie {
   height: number;
 }
 
-export interface CanvasElement extends Pos, Szie, Brush {}
+export interface CanvasItemOptions extends Pos, Szie, Brush {}
 
 export interface CanvasAction {
   canMove: boolean;
@@ -20,8 +20,20 @@ export interface CanvasAction {
   hasBorder: boolean;
 }
 
-export interface CanvasOption extends CanvasAction {}
+export interface CanvasItemSettings extends CanvasAction {}
 
-export type CanvasOptionProducer = (
-  produce: (option: CanvasOption) => void
+export type CanvasItemSettingsProducer = (
+  produce: (option: CanvasItemSettings) => void
 ) => void;
+
+export type CanvasItemRender = (
+  ctx: CanvasRenderingContext2D,
+  option: CanvasItemOptions
+) => void;
+
+export interface CanvasItemInstance {
+  name: string;
+  draw: CanvasItemRender;
+  state: CanvasItemOptions;
+  produce: (option: CanvasItemSettings) => void;
+}

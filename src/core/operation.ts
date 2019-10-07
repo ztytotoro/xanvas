@@ -1,4 +1,4 @@
-import { CanvasOption, CanvasOptionProducer } from './types';
+import { CanvasItemSettings, CanvasItemSettingsProducer } from './types';
 
 export function getTargetItem() {}
 
@@ -17,7 +17,7 @@ export function invokeCommand() {}
 
 export function reverseCommand() {}
 
-export class CanvasSetting implements CanvasOption {
+export class CanvasSetting implements CanvasItemSettings {
   canMove = true;
   canResize = true;
   hasBorder = true;
