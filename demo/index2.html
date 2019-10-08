@@ -16,10 +16,24 @@
 <script>
     var canvas;
     window.onload = function () {
-        zovas.initCanvas(document.getElementById('canvas'), {
+        const cc = zovas.initCanvas(document.getElementById('canvas'), {
             height: 600,
-            width: 100
+            width: 600
         })
+        cc.register([zovas.RectItem])
+        const instance = zovas.RectItem.instance(
+            {
+                height: 200,
+                width: 200,
+                x: 50,
+                y: 50,
+                fill: 'black'
+            },
+            option => {
+                option.canMove;
+            }
+        );
+        cc.addItem(instance)
     }
 </script>
 

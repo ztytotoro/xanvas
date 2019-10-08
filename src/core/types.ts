@@ -1,3 +1,5 @@
+import { CanvasSetting } from './operation';
+
 export interface Brush {
   fill: string | CanvasGradient | CanvasPattern | HTMLImageElement;
 }
@@ -31,9 +33,13 @@ export type CanvasItemRender = (
   option: CanvasItemOptions
 ) => void;
 
-export interface CanvasItemInstance {
+export interface CanvasItem {
   name: string;
   draw: CanvasItemRender;
+}
+
+export interface CanvasItemInstance {
+  name: string;
   state: CanvasItemOptions;
-  produce: (option: CanvasItemSettings) => void;
+  options: CanvasSetting;
 }

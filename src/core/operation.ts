@@ -1,8 +1,14 @@
-import { CanvasItemSettings, CanvasItemSettingsProducer } from './types';
+import {
+  CanvasItemSettings,
+  CanvasItemSettingsProducer,
+  CanvasItemInstance
+} from './types';
 
 export function getTargetItem() {}
 
-export function moveItem() {}
+export function moveEvent(items: CanvasItemInstance) {
+  items.state;
+}
 
 enum OrderType {
   Top,
@@ -22,3 +28,5 @@ export class CanvasSetting implements CanvasItemSettings {
   canResize = true;
   hasBorder = true;
 }
+
+export function createOperation(name: string) {}
