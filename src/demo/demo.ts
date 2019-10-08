@@ -1,7 +1,6 @@
-import { createCanvasItem } from './canvasItem';
-import { RectItem } from './item';
+import { createElement, RectItem } from '../element';
 
-const ImageItem = createCanvasItem('image', (ctx, option) => {
+const ImageItem = createElement('image', (ctx, option) => {
   ctx.fillStyle = option.fill as string;
   ctx.rect(10, 10, 10, 10);
 });

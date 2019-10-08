@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "description": "A canvas library for typescript",
   "main": "src/index.ts",
+  "types": "src/@types",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c"
@@ -25,7 +26,7 @@
   "devDependencies": {
     "rollup": "^1.23.1",
     "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-typescript": "^1.0.1",
+    "rollup-plugin-typescript2": "^0.24.3",
     "tslib": "^1.10.0",
     "typescript": "^3.6.3"
   },

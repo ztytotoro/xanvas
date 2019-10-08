@@ -829,7 +829,6 @@ var zovas = (function (exports) {
             });
         }
     }
-
     function initCanvasContext(canvas) {
         if (canvas.getContext) {
             return canvas.getContext('2d');
@@ -2015,6 +2014,12 @@ var zovas = (function (exports) {
         OrderType[OrderType["Down"] = 2] = "Down";
         OrderType[OrderType["Bottom"] = 3] = "Bottom";
     })(OrderType || (OrderType = {}));
+    var EventType;
+    (function (EventType) {
+        EventType[EventType["MouseDown"] = 0] = "MouseDown";
+        EventType[EventType["MouseUp"] = 1] = "MouseUp";
+        EventType[EventType["MouseMove"] = 2] = "MouseMove";
+    })(EventType || (EventType = {}));
     class CanvasSetting {
         constructor() {
             this.canMove = true;
@@ -2023,7 +2028,7 @@ var zovas = (function (exports) {
         }
     }
 
-    function createCanvasItem(name, draw) {
+    function createElement(name, draw) {
         return {
             name,
             draw,
@@ -2043,11 +2048,10 @@ var zovas = (function (exports) {
             }
         };
     }
-
-    const ImageItem = createCanvasItem('image', (ctx, option) => {
+    const ImageItem = createElement('image', (ctx, option) => {
         ctx.drawImage(option.fill, option.x, option.y, option.width, option.height);
     });
-    const RectItem = createCanvasItem('rect', (ctx, option) => {
+    const RectItem = createElement('rect', (ctx, option) => {
         ctx.fillStyle = option.fill;
         ctx.fillRect(option.x, option.y, option.width, option.height);
     });
@@ -2055,7 +2059,7 @@ var zovas = (function (exports) {
     exports.CanvasCore = CanvasCore;
     exports.ImageItem = ImageItem;
     exports.RectItem = RectItem;
-    exports.createCanvasItem = createCanvasItem;
+    exports.createElement = createElement;
     exports.initCanvas = initCanvas;
     exports.initCanvasContext = initCanvasContext;
 
