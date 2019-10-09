@@ -1,4 +1,5 @@
 import { Subject } from 'rxjs';
+import { moveEvent, createEvent } from 'event';
 // export function getTargetItem() {}
 
 // export enum OrderType {
@@ -40,45 +41,12 @@ import { Subject } from 'rxjs';
 
 // createOperation(et => et.MouseMove);
 
-function createEvent<T>(hs: EventHandler<T>) {
-  const startSubject = new Subject<T>();
-  const publishSubject = new Subject<{
-    data: T;
-    name?: string;
-  }>();
-  const endSubject = new Subject<T>();
-
-  const start = (data: T) => startSubject.next(data);
-  const publish = (data: T, name?: string) =>
-    publishSubject.next({
-      data,
-      name
-    });
-  const end = (data: T) => endSubject.next(data);
-
-  return (e: MouseEvent | TouchEvent) => hs(e, { start, publish, end });
-}
-
 function getSelected(pos: Pos) {}
 
-const moveEvent = createEvent((e, { start, publish, end }) => {
-  if (e.type === 'mousedown' || e.type === 'touchstart') {
-    start(e);
-  }
-  if (e.type === 'mousemove' || e.type === 'touchmove') {
-    publish(e);
-  }
-  if (e.type === 'mouseup' || e.type === 'touchend') {
-    end(e);
-  }
-});
-
-const moving = moveEvent((initialState: Pos, store: Map<string, Pos>) => {
-  store.set('initialState', initialState);
-});
-
-const onstop = moving((state: Pos, store: Map<string, Pos>) => {
-  const initialState = store.get('initialState');
-});
-
-onstop(/*...*/);
+function createOperation<T extends ReturnType<typeof createEvent>>(
+  event: T,
+  handler: (event: T) => void
+) {
+  return;
+}
+const { onStart, onPublish, onEnd } = moveEvent();
