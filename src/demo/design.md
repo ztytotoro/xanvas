@@ -12,3 +12,17 @@ const instance = ImageItem({
     option.canMove = true;
 })
 ```
+
+# 逻辑
+
+## 逻辑定义
+
+## 逻辑连接、组合、条件分支
+
+```ts
+const moveLogic = pipe(
+  [Event.MouseDown, Type.Trigger],
+  [Event.MouseMove, Type.Keep],
+  [Event.MouseUp, Type.Trigger]
+);
+```

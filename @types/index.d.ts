@@ -1,5 +1,10 @@
 interface Fill {
-  fill: string | CanvasGradient | CanvasPattern | HTMLImageElement;
+  fill:
+    | string
+    | CanvasGradient
+    | CanvasPattern
+    | HTMLImageElement
+    | SVGImageElement;
 }
 
 interface Pos {
@@ -39,3 +44,16 @@ interface ElementData {
   state: ElementState;
   options: ElementOption;
 }
+
+interface IDisposable {
+  dispose(): void;
+}
+
+type EventHandler<T> = (
+  e: MouseEvent | TouchEvent,
+  state: {
+    start: (data: T) => void;
+    publish: (data: T, name?: string) => void;
+    end: (data: T) => void;
+  }
+) => any;

@@ -6,7 +6,8 @@
   "types": "src/@types",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "build:tsc": "tsc"
   },
   "repository": {
     "type": "git",
@@ -28,7 +29,7 @@
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-typescript2": "^0.24.3",
     "tslib": "^1.10.0",
-    "typescript": "^3.6.3"
+    "typescript": "^3.7.0-beta"
   },
   "dependencies": {
     "immer": "^4.0.1",

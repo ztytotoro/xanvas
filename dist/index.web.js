@@ -809,50 +809,47 @@ var zovas = (function (exports) {
     }(Subject));
 
     class CanvasCore {
-        constructor(ctx) {
+        constructor(canvas, ctx) {
+            this.canvas = canvas;
             this.ctx = ctx;
             this.doRender = new Subject();
             this.canvasItems = {};
             this.items = [];
-            this.doRender.subscribe(() => this.render());
+            this.disposeFn = [];
+            // this.doRender.subscribe(() => this.render());
+            const id = setInterval(() => this.render(), 8.33333);
+            this.disposeFn.push(() => clearInterval(id));
         }
         addItem(item) {
             this.items.push(item);
-            this.render();
         }
         register(citems) {
             citems.forEach(item => (this.canvasItems[item.name] = item));
         }
         render() {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.items.forEach(item => {
                 this.canvasItems[item.name].draw(this.ctx, item.state);
             });
         }
+        dispose() {
+            this.disposeFn.forEach(fn => fn());
+        }
     }
     function initCanvasContext(canvas) {
-        if (canvas.getContext) {
-            return canvas.getContext('2d');
-        }
-        else {
-            return null;
-        }
+        var _a, _b;
+        return (_b = (_a = canvas).getContext) === null || _b === void 0 ? void 0 : _b.call(_a, '2d');
     }
     function initCanvas(container, { height, width }) {
         container.style.height = height + 'px';
         container.style.width = width + 'px';
         const canvas = document.createElement('canvas');
-        if (height) {
-            canvas.height = height;
-        }
-        if (width) {
-            canvas.width = width;
-        }
+        canvas.height = (height !== null && height !== void 0 ? height : canvas.height);
+        (height !== null && height !== void 0 ? height : (canvas.height = height));
+        canvas.width = (width !== null && width !== void 0 ? width : canvas.width);
         container.appendChild(canvas);
         const ctx = initCanvasContext(canvas);
-        if (ctx) {
-            return new CanvasCore(ctx);
-        }
-        return null;
+        return ctx ? new CanvasCore(canvas, ctx) : null;
     }
 
     var obj;
