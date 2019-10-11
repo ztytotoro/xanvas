@@ -26,11 +26,11 @@ import { moveEvent, createEvent } from 'event';
 
 // export function reverseCommand() {}
 
-// export class CanvasSetting implements ElementOption {
-//   canMove = true;
-//   canResize = true;
-//   hasBorder = true;
-// }
+export class CanvasSetting implements ElementOption {
+  canMove = true;
+  canResize = true;
+  hasBorder = true;
+}
 
 // export function createOperation(
 //   evenType: (eventType: typeof EventType) => EventType,
@@ -41,7 +41,7 @@ import { moveEvent, createEvent } from 'event';
 
 // createOperation(et => et.MouseMove);
 
-function getSelected(pos: Pos) {}
+function getSelected(pos: Pos) { }
 
 function createOperation<T extends ReturnType<typeof createEvent>>(
   event: T,

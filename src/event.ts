@@ -1,55 +1,33 @@
-import { Subject, Subscription } from 'rxjs';
+import { filter, switchMap, takeUntil, pairwise, map } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
-export function createEvent<T>(hs: EventHandler<T>) {
-  return () => {
-    const startSubject = new Subject<T>();
-    const publishSubject = new Subject<{
-      data: T;
-      name?: string;
-    }>();
-    const endSubject = new Subject<T>();
-
-    const subFn: Subscription[] = [];
-
-    const start = (data: T) => startSubject.next(data);
-    const onStart = (cb: (data: T) => void) =>
-      subFn.push(startSubject.subscribe(data => cb(data)));
-
-    const publish = (data: T, name?: string) =>
-      publishSubject.next({
-        data,
-        name
-      });
-    const onPublish = (cb: (data: T, name?: string) => void) =>
-      subFn.push(publishSubject.subscribe(({ data, name }) => cb(data, name)));
-
-    const end = (data: T) => endSubject.next(data);
-    const onEnd = (cb: (data: T) => void) =>
-      subFn.push(endSubject.subscribe(data => cb(data)));
-
-    const dispose = () => {
-      subFn.forEach(sub => sub.unsubscribe());
-    };
-
-    return {
-      subscriber: (e: MouseEvent | TouchEvent) =>
-        hs(e, { start, publish, end }),
-      onStart,
-      onPublish,
-      onEnd,
-      dispose
-    };
-  };
+export function createEvent<T>(start: EventPredicate, on: EventPredicate, end: EventPredicate, mapper: EventMapper<Event, T>) {
+  const startEvent = new Subject<Event>().pipe(
+    filter(start)
+  );
+  const onEvent = new Subject<Event>().pipe(
+    filter(on)
+  );
+  const endEvent = new Subject<Event>().pipe(
+    filter(end)
+  );
+  return startEvent.pipe(
+    switchMap(() => onEvent),
+    takeUntil(endEvent),
+    pairwise(),
+    map(([prev, now]) => mapper(prev, now))
+  );
 }
 
-export const moveEvent = createEvent((e, { start, publish, end }) => {
-  if (e.type === 'mousedown' || e.type === 'touchstart') {
-    start(e);
+export const moveEvent = createEvent<Pos>(
+  e => e.type === 'mousedown' || e.type === 'touchstart',
+  e => e.type === 'mousemove' || e.type === 'touchmove',
+  e => e.type === 'mouseup' || e.type === 'touchend',
+  (prev, now) => {
+    return {
+      x: (now as MouseEvent).offsetX - (prev as MouseEvent).offsetX,
+      y: (now as MouseEvent).offsetY - (prev as MouseEvent).offsetY
+    };
   }
-  if (e.type === 'mousemove' || e.type === 'touchmove') {
-    publish(e);
-  }
-  if (e.type === 'mouseup' || e.type === 'touchend') {
-    end(e);
-  }
-});
+);
+
