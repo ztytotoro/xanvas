@@ -8,7 +8,6 @@ import {
   endWith
 } from 'rxjs/operators';
 import { Subject, Observable } from 'rxjs';
-import { timeStamp } from 'utils';
 
 export const EventStart = Symbol('start');
 export const EventEnd = Symbol('end');
