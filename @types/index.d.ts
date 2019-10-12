@@ -1,10 +1,10 @@
 interface Fill {
   fill:
-  | string
-  | CanvasGradient
-  | CanvasPattern
-  | HTMLImageElement
-  | SVGImageElement;
+    | string
+    | CanvasGradient
+    | CanvasPattern
+    | HTMLImageElement
+    | SVGImageElement;
 }
 
 interface Pos {
@@ -17,7 +17,7 @@ interface Szie {
   height: number;
 }
 
-interface ElementState extends Pos, Szie, Fill { }
+interface ElementState extends Pos, Szie, Fill {}
 
 interface Operation {
   canMove: boolean;
@@ -25,7 +25,7 @@ interface Operation {
   hasBorder: boolean;
 }
 
-interface ElementOption extends Operation { }
+interface ElementOption extends Operation {}
 
 type ElementOptionProducer = (produce: (option: ElementOption) => void) => void;
 
@@ -60,4 +60,4 @@ type EventHandler<T> = (
 
 type EventPredicate = (e: Event) => boolean;
 
-type EventMapper<TSource, TTarget> = (prev: TSource, now: TSource) => TTarget;
+type EventMapper<TSource, TTarget> = (source: TSource) => TTarget;

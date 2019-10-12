@@ -1,5 +1,7 @@
-import { Subject } from 'rxjs';
+import { EventStart, EventEnd } from './event';
+import { Subject, Observable } from 'rxjs';
 import { moveEvent, createEvent } from 'event';
+import { tap } from 'rxjs/operators';
 // export function getTargetItem() {}
 
 // export enum OrderType {
@@ -41,12 +43,47 @@ export class CanvasSetting implements ElementOption {
 
 // createOperation(et => et.MouseMove);
 
-function getSelected(pos: Pos) { }
+function getWidgets(pos: Pos) {}
 
-function createOperation<T extends ReturnType<typeof createEvent>>(
-  event: T,
-  handler: (event: T) => void
+let t: any;
+
+moveEvent.subscribe(([prev, now]) => {
+  if (prev === EventStart) {
+    t = getWidgets(<Pos>now);
+    return;
+  }
+  if (now === EventEnd) {
+    t = [];
+    return;
+  }
+  t.forEach((x: any) => {
+    x.x += now.x - prev.x;
+    x.y += now.y - prev.y;
+  });
+});
+
+export function createOperation<T>(
+  event: Observable<T>,
+  process: (data: T, store: Map<string, any>) => void
 ) {
-  return;
+  const store = new Map<string, any>();
+  return event.pipe(tap(data => process(data, store)));
 }
-const { onStart, onPublish, onEnd } = moveEvent();
+
+export const moveOperation = createOperation(
+  moveEvent,
+  ([prev, now], store) => {
+    if (prev === EventStart) {
+      store.set('', getWidgets(<Pos>now));
+      return;
+    }
+    if (now === EventEnd) {
+      store.set('', []);
+      return;
+    }
+    store.get('').forEach((x: any) => {
+      x.x += now.x - prev.x;
+      x.y += now.y - prev.y;
+    });
+  }
+);
