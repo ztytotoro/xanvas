@@ -1,3 +1,8 @@
+export declare class CanvasSetting implements ElementOption {
+    canMove: boolean;
+    canResize: boolean;
+    hasBorder: boolean;
+}
 export declare function createElement(name: string, draw: ElementDrawer): {
     name: string;
     draw: ElementDrawer;

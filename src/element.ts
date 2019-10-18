@@ -1,5 +1,8 @@
-import immer from 'immer';
-import { CanvasSetting } from './operation';
+export class CanvasSetting implements ElementOption {
+  canMove = true;
+  canResize = true;
+  hasBorder = true;
+}
 
 export function createElement(name: string, draw: ElementDrawer) {
   return {
@@ -7,25 +10,29 @@ export function createElement(name: string, draw: ElementDrawer) {
     draw,
     instance: (
       state: ElementState,
-      produce: (option: ElementOption) => void = () => {}
+      produce: (option: ElementOption) => void = () => { }
     ) => {
-      function updateState(
-        this: ElementData,
-        p: (state: ElementState) => void
-      ) {
-        immer(this.state, p);
-      }
       const options = new CanvasSetting();
       produce(options);
-      const result = {
+      return {
         name,
         state,
         options
       } as ElementData;
-      updateState.bind(result);
-      return result;
     }
   };
+}
+
+class Element {
+  constructor(public name: string, public draw: ElementDrawer) {
+  }
+
+  option(state: ElementState) {
+    return {
+      type: this.name,
+      state
+    };
+  }
 }
 
 export const ImageItem = createElement('image', (ctx, option) => {

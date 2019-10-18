@@ -61,3 +61,8 @@ type EventHandler<T> = (
 type EventPredicate = (e: Event) => boolean;
 
 type EventMapper<TSource, TTarget> = (prev: TSource, now: TSource) => TTarget;
+
+interface CanvasEvent {
+  type: string;
+  pos: Pos;
+}

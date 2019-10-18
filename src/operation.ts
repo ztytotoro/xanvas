@@ -1,52 +1,35 @@
+import { CanvasCore } from './canvas';
 import { Subject } from 'rxjs';
-import { moveEvent, createEvent } from 'event';
-// export function getTargetItem() {}
 
-// export enum OrderType {
-//   Top,
-//   Up,
-//   Down,
-//   Bottom
-// }
+export function createOperation(canvasCore: CanvasCore) {
 
-// export enum EventType {
-//   MouseDown,
-//   MouseUp,
-//   MouseMove
-// }
-
-// export enum MouseState {
-//   Pressed,
-//   Moving
-// }
-
-// export function orderItem() {}
-
-// export function invokeCommand() {}
-
-// export function reverseCommand() {}
-
-export class CanvasSetting implements ElementOption {
-  canMove = true;
-  canResize = true;
-  hasBorder = true;
 }
 
-// export function createOperation(
-//   evenType: (eventType: typeof EventType) => EventType,
-//   handler?: (pre: Event, now: Event) => void
-// ) {}
-
-// const mouseDown = createOperation(et => et.MouseDown, (pre, now) => {});
-
-// createOperation(et => et.MouseMove);
-
-function getSelected(pos: Pos) { }
-
-function createOperation<T extends ReturnType<typeof createEvent>>(
-  event: T,
-  handler: (event: T) => void
-) {
-  return;
+export function dragable(canvasCore: CanvasCore) {
+  let el: ElementData | null = null;
+  let lastPos: Pos;
+  canvasCore.event.subscribe(e => {
+    if (e.type === 'mousedown') {
+      el = findElement(e.pos, canvasCore.elements);
+      lastPos = e.pos;
+    }
+    if (e.type === 'mousemove') {
+      if (!el) return;
+      el.state.x += e.pos.x - lastPos.x;
+      el.state.y += e.pos.y - lastPos.y;
+      lastPos = e.pos;
+    }
+    if (e.type === 'mouseup') {
+      el = null;
+    }
+  });
 }
-const { onStart, onPublish, onEnd } = moveEvent();
+
+function findElement(pos: Pos, elements: ElementData[]) {
+  for (let el of elements) {
+    if (pos.x >= el.state.x && pos.y >= el.state.y && pos.x <= (el.state.x + el.state.width) && pos.y <= (el.state.y + el.state.height)) {
+      return el;
+    }
+  }
+  return null;
+}
