@@ -852,6 +852,22 @@ var zovas = (function (exports) {
         }
     }
 
+    /** PURE_IMPORTS_START _util_isScheduler,_fromArray,_scheduled_scheduleArray PURE_IMPORTS_END */
+    function of() {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        var scheduler = args[args.length - 1];
+        if (isScheduler(scheduler)) {
+            args.pop();
+            return scheduleArray(args, scheduler);
+        }
+        else {
+            return fromArray(args);
+        }
+    }
+
     /** PURE_IMPORTS_START  PURE_IMPORTS_END */
     function identity(x) {
         return x;
@@ -1267,6 +1283,20 @@ var zovas = (function (exports) {
         return mergeMap(identity, concurrent);
     }
 
+    /** PURE_IMPORTS_START _mergeAll PURE_IMPORTS_END */
+    function concatAll() {
+        return mergeAll(1);
+    }
+
+    /** PURE_IMPORTS_START _of,_operators_concatAll PURE_IMPORTS_END */
+    function concat() {
+        var observables = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            observables[_i] = arguments[_i];
+        }
+        return concatAll()(of.apply(void 0, observables));
+    }
+
     /** PURE_IMPORTS_START _Observable,_util_isArray,_util_isFunction,_operators_map PURE_IMPORTS_END */
     function fromEvent(target, eventName, options, resultSelector) {
         if (isFunction(options)) {
@@ -1390,6 +1420,15 @@ var zovas = (function (exports) {
         return FilterSubscriber;
     }(Subscriber));
 
+    /** PURE_IMPORTS_START _observable_concat,_observable_of PURE_IMPORTS_END */
+    function endWith() {
+        var array = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            array[_i] = arguments[_i];
+        }
+        return function (source) { return concat(source, of.apply(void 0, array)); };
+    }
+
     /** PURE_IMPORTS_START tslib,_Subscriber PURE_IMPORTS_END */
     function pairwise() {
         return function (source) { return source.lift(new PairwiseOperator()); };
@@ -1424,6 +1463,22 @@ var zovas = (function (exports) {
         };
         return PairwiseSubscriber;
     }(Subscriber));
+
+    /** PURE_IMPORTS_START _observable_concat,_util_isScheduler PURE_IMPORTS_END */
+    function startWith() {
+        var array = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            array[_i] = arguments[_i];
+        }
+        var scheduler = array[array.length - 1];
+        if (isScheduler(scheduler)) {
+            array.pop();
+            return function (source) { return concat(array, source, scheduler); };
+        }
+        else {
+            return function (source) { return concat(array, source); };
+        }
+    }
 
     /** PURE_IMPORTS_START tslib,_OuterSubscriber,_InnerSubscriber,_util_subscribeToResult,_map,_observable_from PURE_IMPORTS_END */
     function switchMap(project, resultSelector) {
@@ -1658,21 +1713,25 @@ var zovas = (function (exports) {
         ctx.fillRect(option.x, option.y, option.width, option.height);
     });
 
+    const EventStart = Symbol('start');
+    const EventEnd = Symbol('end');
     function createEvent(start, on, end, mapper) {
         const startEvent = new Subject().pipe(filter(start));
         const onEvent = new Subject().pipe(filter(on));
         const endEvent = new Subject().pipe(filter(end));
-        return startEvent.pipe(switchMap(() => onEvent), takeUntil(endEvent), pairwise(), map(([prev, now]) => mapper(prev, now)));
+        return startEvent.pipe(switchMap(_ => onEvent.pipe(takeUntil(endEvent), map(source => (mapper ? mapper(source) : source)), startWith(EventStart), endWith(EventEnd))), pairwise(), filter(x => x !== [EventStart, EventEnd]));
     }
-    const moveEvent = createEvent(e => e.type === 'mousedown' || e.type === 'touchstart', e => e.type === 'mousemove' || e.type === 'touchmove', e => e.type === 'mouseup' || e.type === 'touchend', (prev, now) => {
+    const moveEvent = createEvent(e => e.type === 'mousedown' || e.type === 'touchstart', e => e.type === 'mousemove' || e.type === 'touchmove', e => e.type === 'mouseup' || e.type === 'touchend', source => {
         return {
-            x: now.offsetX - prev.offsetX,
-            y: now.offsetY - prev.offsetY
+            x: source.offsetX,
+            y: source.offsetY
         };
     });
 
     exports.CanvasCore = CanvasCore;
     exports.CanvasSetting = CanvasSetting;
+    exports.EventEnd = EventEnd;
+    exports.EventStart = EventStart;
     exports.ImageItem = ImageItem;
     exports.RectItem = RectItem;
     exports.createElement = createElement;

@@ -1,5 +1,4 @@
 import { CanvasCore } from './canvas';
-import { Subject } from 'rxjs';
 
 export function createOperation(canvasCore: CanvasCore) {
 

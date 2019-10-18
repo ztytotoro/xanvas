@@ -1,33 +1,48 @@
-import { filter, switchMap, takeUntil, pairwise, map } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+import {
+  filter,
+  switchMap,
+  takeUntil,
+  pairwise,
+  map,
+  startWith,
+  endWith
+} from 'rxjs/operators';
+import { Subject, Observable } from 'rxjs';
 
-export function createEvent<T>(start: EventPredicate, on: EventPredicate, end: EventPredicate, mapper: EventMapper<Event, T>) {
-  const startEvent = new Subject<Event>().pipe(
-    filter(start)
-  );
-  const onEvent = new Subject<Event>().pipe(
-    filter(on)
-  );
-  const endEvent = new Subject<Event>().pipe(
-    filter(end)
-  );
+export const EventStart = Symbol('start');
+export const EventEnd = Symbol('end');
+
+export function createEvent<T = Event>(
+  start: EventPredicate,
+  on: EventPredicate,
+  end: EventPredicate,
+  mapper?: EventMapper<Event, T>
+) {
+  const startEvent = new Subject<Event>().pipe(filter(start));
+  const onEvent = new Subject<Event>().pipe(filter(on));
+  const endEvent = new Subject<Event>().pipe(filter(end));
   return startEvent.pipe(
-    switchMap(() => onEvent),
-    takeUntil(endEvent),
+    switchMap(_ =>
+      onEvent.pipe(
+        takeUntil(endEvent),
+        map(source => (mapper ? mapper(source) : source)),
+        startWith(EventStart),
+        endWith(EventEnd)
+      )
+    ),
     pairwise(),
-    map(([prev, now]) => mapper(prev, now))
-  );
+    filter(x => x !== [EventStart, EventEnd])
+  ) as Observable<[typeof EventStart, T] | [T, typeof EventEnd]>;
 }
 
 export const moveEvent = createEvent<Pos>(
   e => e.type === 'mousedown' || e.type === 'touchstart',
   e => e.type === 'mousemove' || e.type === 'touchmove',
   e => e.type === 'mouseup' || e.type === 'touchend',
-  (prev, now) => {
+  source => {
     return {
-      x: (now as MouseEvent).offsetX - (prev as MouseEvent).offsetX,
-      y: (now as MouseEvent).offsetY - (prev as MouseEvent).offsetY
+      x: (source as MouseEvent).offsetX,
+      y: (source as MouseEvent).offsetY
     };
   }
 );
-
