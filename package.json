@@ -38,7 +38,7 @@
         "rollup-plugin-node-resolve": "^5.2.0",
         "rollup-plugin-typescript2": "^0.24.3",
         "tslib": "^1.10.0",
-        "typescript": "^3.7.0-beta"
+        "typescript": "^3.7.1-rc"
     },
     "dependencies": {
         "immer": "^4.0.2",
