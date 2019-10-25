@@ -1,6 +1,6 @@
-import { Subject, fromEvent, forkJoin, merge } from 'rxjs';
-import { map, debounceTime } from 'rxjs/operators';
 import { dragable } from 'operation';
+import { fromEvent, merge, Subject } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export class CanvasCore implements IDisposable {
   doRender = new Subject();
@@ -52,8 +52,8 @@ export class CanvasCore implements IDisposable {
         return {
           type: e.type,
           pos: {
-            x: (<MouseEvent>e).offsetX - this.ctx.canvas.offsetLeft,
-            y: (<MouseEvent>e).offsetY - this.ctx.canvas.offsetTop
+            x: (e as MouseEvent).offsetX - this.ctx.canvas.offsetLeft,
+            y: (e as MouseEvent).offsetY - this.ctx.canvas.offsetTop
           }
         } as CanvasEvent;
       })

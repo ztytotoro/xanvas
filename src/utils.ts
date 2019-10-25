@@ -1,3 +1,3 @@
 export function timeStamp() {
-  return new Date().valueOf();
+    return new Date().valueOf()
 }
