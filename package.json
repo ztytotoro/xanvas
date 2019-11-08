@@ -28,17 +28,17 @@
     },
     "homepage": "https://github.com/ztytotoro/xanvas#readme",
     "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^2.2.0",
-        "@typescript-eslint/typescript-estree": "^2.2.0",
-        "eslint": "^6.3.0",
-        "eslint-config-prettier": "^6.2.0",
+        "@typescript-eslint/eslint-plugin": "^2.6.1",
+        "@typescript-eslint/typescript-estree": "^2.6.1",
+        "eslint": "^6.6.0",
+        "eslint-config-prettier": "^6.5.0",
         "eslint-plugin-import": "^2.18.2",
         "prettier": "1.18.2",
-        "rollup": "^1.25.2",
+        "rollup": "^1.26.3",
         "rollup-plugin-node-resolve": "^5.2.0",
         "rollup-plugin-typescript2": "^0.24.3",
         "tslib": "^1.10.0",
-        "typescript": "^3.7.1-rc"
+        "typescript": "^3.7.2"
     },
     "dependencies": {
         "immer": "^4.0.2",
