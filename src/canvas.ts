@@ -47,17 +47,19 @@ export class CanvasCore implements IDisposable {
     const mousedown$ = fromEvent(window, 'mousedown');
     const mousemove$ = fromEvent(window, 'mousemove');
     const mouseup$ = fromEvent(window, 'mouseup');
-    merge(mousedown$, mousemove$, mouseup$).pipe(
-      map(e => {
-        return {
-          type: e.type,
-          pos: {
-            x: (e as MouseEvent).offsetX - this.ctx.canvas.offsetLeft,
-            y: (e as MouseEvent).offsetY - this.ctx.canvas.offsetTop
-          }
-        } as CanvasEvent;
-      })
-    ).subscribe(this.event);
+    merge(mousedown$, mousemove$, mouseup$)
+      .pipe(
+        map(e => {
+          return {
+            type: e.type,
+            pos: {
+              x: (e as MouseEvent).offsetX - this.ctx.canvas.offsetLeft,
+              y: (e as MouseEvent).offsetY - this.ctx.canvas.offsetTop
+            }
+          } as CanvasEvent;
+        })
+      )
+      .subscribe(this.event);
   }
 }
 
@@ -67,7 +69,7 @@ export function initCanvasContext(canvas: HTMLCanvasElement) {
 
 export function initCanvas(
   container: HTMLDivElement,
-  { height, width }: { height: number; width: number; }
+  { height, width }: { height: number; width: number }
 ) {
   container.style.height = height + 'px';
   container.style.width = width + 'px';
